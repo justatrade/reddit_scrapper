@@ -5,15 +5,15 @@
 # на втором месте следущий за ним и так далее.
 
 import calendar
-import time
+from collections import Counter
 from _datetime import datetime
 from datetime import timedelta
-from collections import Counter
+import time
 
 import praw
-from prawcore.exceptions import TooManyRequests
 from praw.models.comment_forest import CommentForest
 from praw.models.reddit.submission import Submission
+from prawcore.exceptions import TooManyRequests
 
 import config
 
