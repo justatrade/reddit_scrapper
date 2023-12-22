@@ -94,21 +94,25 @@ def process_comment_counting() -> None:
         client_secret=config.client_secret,
         user_agent=config.user_agent
     )
-    submissions = reddit.subreddit(config.SUBMISSION).top(time_filter='week')
+    submissions = reddit.subreddit(config.SUBMISSION).top(time_filter='week', limit=None)
     oldest_utc = datetime.utcnow() - timedelta(days=config.TIME_DEPTH_DAYS)
     oldest_utc = calendar.timegm(oldest_utc.utctimetuple())
+    submissions_len = 0
     for each in submissions.__iter__():
         if each.created_utc > oldest_utc:
+            submissions_len += 1
             current_posts = posts_authors.get(each.author.name, 0) + 1
             posts_authors[each.author.name] = current_posts
             print(f'{datetime.utcnow()} '
                   f'[INFO] Processing submission: {each.title}')
             submissions_dict[each.title] = get_all_sub_comments(each, comments_authors)
-            time.sleep(0.5)
-
+            time.sleep(0.2)
+    print(f'Total submissions processed: {submissions_len}')
     finish_time = time.time()
     print_results(finish_time, start_time,
                   posts_authors, comments_authors, submissions_dict)
+    print(f'Total authors: {len(comments_authors)}')
+    print(f'Total comments: {sum(list(comments_authors.values()))}')
 
 if __name__ == '__main__':
     process_comment_counting()
