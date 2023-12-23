@@ -5,6 +5,7 @@
 # на втором месте следущий за ним и так далее.
 
 import calendar
+import sys
 from collections import Counter
 from _datetime import datetime
 from datetime import timedelta
@@ -14,6 +15,7 @@ import praw
 from praw.models.comment_forest import CommentForest
 from praw.models.reddit.submission import Submission
 from prawcore.exceptions import TooManyRequests
+from prawcore.exceptions import NotFound
 
 import config
 
@@ -61,10 +63,47 @@ def get_all_sub_comments(thread: Submission, comments_authors) -> int:
         thread.comments.replace_more(limit=None)
         count_subcomments(thread.comments, comments_authors)
     except TooManyRequests:
-        time.sleep(3)
+        time.sleep(0.8)
         thread.comments.replace_more(limit=None)
         count_subcomments(thread.comments, comments_authors)
     return len(thread.comments.list())
+
+
+def user_input_subreddit() -> str:
+    """
+    Getting the name of subreddit to parse
+    :return:
+    """
+    subreddit = input('Subreddit to search: ')
+    return subreddit
+
+
+def user_input_time_frame() -> dict[str, int]:
+    """
+    Get user specified time frame for search and check it's validness
+    :return: Dictionary of weeks, days, hours for using in timedelta()
+    """
+    time_frame = input('Time_frame of your search '
+                       '[number] [hours/days/weeks]: ')
+    try:
+        number = int(time_frame.split()[0])
+        period = str(time_frame.split()[1])
+        if period not in ['hours', 'days', 'weeks'] or number < 1:
+            raise ValueError
+    except ValueError:
+        print('Try to be more accurate... Next time!)')
+        sys.exit(0)
+    weeks = days = hours = 0
+    if period == 'hours':
+        weeks = number // 168
+        days = (number - weeks * 168) // 24
+        hours = (number - weeks * 168 - days * 24) % 24
+    elif period == 'days':
+        weeks = number // 7
+        days = (number - weeks * 7) % 7
+    else:
+        weeks = number
+    return {'weeks': weeks, 'days': days, 'hours': hours}
 
 
 def pretty_out(to_print: dict[str, int]) -> None:
@@ -74,8 +113,23 @@ def pretty_out(to_print: dict[str, int]) -> None:
     :param to_print:
     :return:
     """
-    for i, user in enumerate(Counter(to_print).most_common(10)):
-        print(f'{i+1}. {user[0]} - {user[1]}')
+    for i, elem in enumerate(Counter(to_print).most_common(10)):
+        print(f'{i+1}. {elem[0]} - {elem[1]}')
+
+
+def subreddit_exists(reddit, subreddit) -> bool:
+    """
+    Checks the availability of subreddit
+    :param reddit: Instance of reddit
+    :param subreddit: Name of subreddit to check
+    :return:
+    """
+    exists = True
+    try:
+        reddit.subreddits.search_by_name(subreddit, exact=True)
+    except NotFound:
+        exists = False
+    return exists
 
 
 def process_comment_counting() -> None:
@@ -87,15 +141,22 @@ def process_comment_counting() -> None:
     comments_authors: dict[str, int] = {}
     submissions_dict: dict[str, int] = {}
 
-    start_time = time.time()
-
     reddit = praw.Reddit(
         client_id=config.client_id,
         client_secret=config.client_secret,
         user_agent=config.user_agent
     )
-    submissions = reddit.subreddit(config.SUBMISSION).top(time_filter='week', limit=None)
-    oldest_utc = datetime.utcnow() - timedelta(days=config.TIME_DEPTH_DAYS)
+    subreddit = user_input_subreddit()
+
+    while not subreddit_exists(reddit, subreddit):
+        subreddit = user_input_subreddit()
+
+    start_time = time.time()
+    submissions = reddit.subreddit(subreddit).top(time_filter='year',
+                                                  limit=None)
+    time_frame = user_input_time_frame()
+
+    oldest_utc = datetime.utcnow() - timedelta(**time_frame)
     oldest_utc = calendar.timegm(oldest_utc.utctimetuple())
     submissions_len = 0
     for each in submissions.__iter__():
@@ -113,6 +174,7 @@ def process_comment_counting() -> None:
                   posts_authors, comments_authors, submissions_dict)
     print(f'Total authors: {len(comments_authors)}')
     print(f'Total comments: {sum(list(comments_authors.values()))}')
+
 
 if __name__ == '__main__':
     process_comment_counting()

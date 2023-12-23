@@ -4,8 +4,7 @@ from decouple import config
 SERVER_ADDRESS = '127.0.0.1'
 SERVER_PORT = 8080
 REDIRECT_URL = 'http://' + SERVER_ADDRESS+':' + str(SERVER_PORT)+'/reddit_app'
-SUBMISSION = 'gaming'
-TIME_DEPTH_DAYS = 3
+TIME_DEPTH_DAYS = 1
 
 client_id = config('client_id')
 client_secret = config('client_secret')
