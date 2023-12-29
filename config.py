@@ -1,6 +1,5 @@
 from decouple import config
 
-
 SERVER_ADDRESS = '127.0.0.1'
 SERVER_PORT = 8080
 REDIRECT_URL = 'http://' + SERVER_ADDRESS+':' + str(SERVER_PORT)+'/reddit_app'

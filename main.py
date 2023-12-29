@@ -6,18 +6,20 @@
 
 import calendar
 import sys
-from collections import Counter
-from _datetime import datetime
-from datetime import timedelta
 import time
 
 import praw
-from praw.models.comment_forest import CommentForest
-from praw.models.reddit.submission import Submission
-from prawcore.exceptions import TooManyRequests
-from prawcore.exceptions import NotFound
 
 import config
+
+from collections import Counter
+from datetime import datetime, timedelta
+
+from praw.models.comment_forest import CommentForest
+from praw.models.reddit.submission import Submission
+from prawcore.exceptions import NotFound
+from prawcore.exceptions import TooManyRequests
+
 
 
 def count_subcomments(thread: CommentForest,

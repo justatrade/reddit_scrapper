@@ -6,6 +6,7 @@ import praw
 
 import config
 
+
 def receive_connection():
     """Wait for and then return a connected socket..
 
